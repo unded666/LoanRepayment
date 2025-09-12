@@ -1,0 +1,11 @@
+body { font-family: Arial, sans-serif; background: #f4f4f4; }
+.container { max-width: 600px; margin: 40px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+form label { display: block; margin: 10px 0 5px; }
+input, button { padding: 8px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+button { background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+button:hover { background: #0056b3; }
+#summary { margin: 20px 0; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+td, th { border: 1px solid #ddd; padding: 8px; text-align: right; }
+th { background: #f0f0f0; }
+

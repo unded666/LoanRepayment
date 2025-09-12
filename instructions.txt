@@ -1,0 +1,6 @@
+Create a web app that calculates and displays loan amortization schedules. The app should allow users to input the
+purchase price, interest rate, down payment and loan term. It should then generate a detailed schedule showing each
+ payment's breakdown into principal and interest, as well as the remaining balance after each payment. The app should
+ also provide a summary of total payments, total interest paid, and the payoff date. Use a modern JavaScript framework
+ (like React or Vue) for the frontend and Node.js for the backend. Ensure the app is responsive and user-friendly. All
+ of the information given back to the user should be illustrated graphically where appropriate.
