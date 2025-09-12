@@ -32,23 +32,20 @@ function displaySchedule(schedule) {
 
 function drawCharts(schedule) {
     try {
-        const balanceCanvas = document.getElementById('balanceChart');
+        // Only use the two remaining canvases
         const breakdownCanvas = document.getElementById('breakdownChart');
         const balanceAndInterestCanvas = document.getElementById('balanceAndInterestChart');
-        const ctx1 = balanceCanvas?.getContext('2d');
         const ctx2 = breakdownCanvas?.getContext('2d');
         const ctx3 = balanceAndInterestCanvas?.getContext('2d');
         if (!window.Chart) {
             console.error('Chart.js is not loaded.');
             return;
         }
-        if (!ctx1 || !ctx2 || !ctx3) {
+        if (!ctx2 || !ctx3) {
             console.error('One or more canvas elements not found or context not available.');
             return;
         }
         // Destroy existing charts if they exist
-        const chart1 = Chart.getChart(balanceCanvas);
-        if (chart1) chart1.destroy();
         const chart2 = Chart.getChart(breakdownCanvas);
         if (chart2) chart2.destroy();
         const chart3 = Chart.getChart(balanceAndInterestCanvas);
@@ -64,19 +61,6 @@ function drawCharts(schedule) {
             total += interests[i];
             cumulativeInterest.push(Number(total.toFixed(2)));
         }
-        new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Remaining Balance',
-                    data: balances,
-                    borderColor: 'blue',
-                    fill: false
-                }]
-            },
-            options: { responsive: true }
-        });
         new Chart(ctx3, {
             type: 'line',
             data: {
