@@ -31,45 +31,99 @@ function displaySchedule(schedule) {
 }
 
 function drawCharts(schedule) {
-    const ctx1 = document.getElementById('balanceChart').getContext('2d');
-    const ctx2 = document.getElementById('breakdownChart').getContext('2d');
-    const labels = schedule.map(row => row.payment_number);
-    const balances = schedule.map(row => row.balance);
-    const principals = schedule.map(row => row.principal);
-    const interests = schedule.map(row => row.interest);
-    if(window.balanceChart) window.balanceChart.destroy();
-    if(window.breakdownChart) window.breakdownChart.destroy();
-    window.balanceChart = new Chart(ctx1, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Remaining Balance',
-                data: balances,
-                borderColor: 'blue',
-                fill: false
-            }]
-        },
-        options: { responsive: true }
-    });
-    window.breakdownChart = new Chart(ctx2, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Principal',
-                    data: principals,
-                    backgroundColor: 'green',
-                },
-                {
-                    label: 'Interest',
-                    data: interests,
-                    backgroundColor: 'red',
+    try {
+        const balanceCanvas = document.getElementById('balanceChart');
+        const breakdownCanvas = document.getElementById('breakdownChart');
+        const balanceAndInterestCanvas = document.getElementById('balanceAndInterestChart');
+        const ctx1 = balanceCanvas?.getContext('2d');
+        const ctx2 = breakdownCanvas?.getContext('2d');
+        const ctx3 = balanceAndInterestCanvas?.getContext('2d');
+        if (!window.Chart) {
+            console.error('Chart.js is not loaded.');
+            return;
+        }
+        if (!ctx1 || !ctx2 || !ctx3) {
+            console.error('One or more canvas elements not found or context not available.');
+            return;
+        }
+        // Destroy existing charts if they exist
+        const chart1 = Chart.getChart(balanceCanvas);
+        if (chart1) chart1.destroy();
+        const chart2 = Chart.getChart(breakdownCanvas);
+        if (chart2) chart2.destroy();
+        const chart3 = Chart.getChart(balanceAndInterestCanvas);
+        if (chart3) chart3.destroy();
+        const labels = schedule.map(row => row.payment_number);
+        const balances = schedule.map(row => row.balance);
+        const principals = schedule.map(row => row.principal);
+        const interests = schedule.map(row => row.interest);
+        // Calculate cumulative interest
+        let cumulativeInterest = [];
+        let total = 0;
+        for (let i = 0; i < interests.length; i++) {
+            total += interests[i];
+            cumulativeInterest.push(Number(total.toFixed(2)));
+        }
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Remaining Balance',
+                    data: balances,
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: { responsive: true }
+        });
+        new Chart(ctx3, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Remaining Principal',
+                        data: balances,
+                        borderColor: 'blue',
+                        fill: false
+                    },
+                    {
+                        label: 'Cumulative Interest Paid',
+                        data: cumulativeInterest,
+                        borderColor: 'orange',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: true, text: 'Principal & Cumulative Interest Over Time' }
                 }
-            ]
-        },
-        options: { responsive: true, stacked: true }
-    });
+            }
+        });
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Principal',
+                        data: principals,
+                        backgroundColor: 'green',
+                    },
+                    {
+                        label: 'Interest',
+                        data: interests,
+                        backgroundColor: 'red',
+                    }
+                ]
+            },
+            options: { responsive: true, stacked: true }
+        });
+    } catch (err) {
+        console.error('Error drawing charts:', err);
+    }
 }
-
