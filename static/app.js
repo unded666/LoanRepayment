@@ -109,6 +109,7 @@ function displaySchedule(schedule, symbol = '$') {
 
 // Show the download button after schedule is generated
 function showDownloadButton() {
+    console.log('showDownloadButton called');
     document.getElementById('download-excel-btn').style.display = 'block';
 }
 
