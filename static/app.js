@@ -191,7 +191,7 @@ function drawCharts(originalSchedule, customSchedule) {
                             fill: false
                         }
                     ] : [])
-                ]
+                }
             },
             options: {
                 responsive: true,
@@ -268,3 +268,8 @@ if (downloadBtn) {
         }
     };
 }
+
+window.onload = function() {
+    hideDownloadButton();
+    // ...any other onload logic...
+};
