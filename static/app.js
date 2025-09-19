@@ -104,6 +104,17 @@ function displaySchedule(schedule, symbol = '$') {
     });
     html += '</table>';
     document.getElementById('schedule').innerHTML = html;
+    showDownloadButton();
+}
+
+// Show the download button after schedule is generated
+function showDownloadButton() {
+    document.getElementById('download-excel-btn').style.display = 'block';
+}
+
+// Hide the download button
+function hideDownloadButton() {
+    document.getElementById('download-excel-btn').style.display = 'none';
 }
 
 function drawCharts(originalSchedule, customSchedule) {
@@ -214,4 +225,45 @@ function drawCharts(originalSchedule, customSchedule) {
     } catch (err) {
         console.error('Error drawing charts:', err);
     }
+}
+
+// Add event listener for download button
+const downloadBtn = document.getElementById('download-excel-btn');
+if (downloadBtn) {
+    downloadBtn.onclick = async function() {
+        // Gather form data
+        const form = document.getElementById('loan-form');
+        const data = new FormData(form);
+        // Add custom repayment if present
+        const customVal = document.getElementById('custom-repayment-input').value;
+        if (customVal) data.append('custom_repayment', customVal);
+        // Get chart images as base64
+        const chart1 = document.getElementById('balanceAndInterestChart').toDataURL('image/png');
+        const chart2 = document.getElementById('breakdownChart').toDataURL('image/png');
+        data.append('chart1_base64', chart1);
+        data.append('chart2_base64', chart2);
+        try {
+            const response = await fetch('/download_excel', {
+                method: 'POST',
+                body: data
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                alert('Failed to generate Excel file: ' + errorText);
+                return;
+            }
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'amortization.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('An error occurred while downloading the Excel file.');
+            console.error(err);
+        }
+    };
 }
