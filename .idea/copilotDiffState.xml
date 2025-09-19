@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/render.yaml">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/render.yaml" />
+              <option name="originalContent" value="services:&#10;  - type: web&#10;    name: loan-repayment-app&#10;    env: python&#10;    buildCommand: pip install -r requirements.txt&#10;    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000&#10;    plan: free&#10;&#10;" />
+              <option name="updatedContent" value="services:&#13;&#10;  - type: web&#13;&#10;    name: loan-repayment-app&#13;&#10;    env: python&#13;&#10;    buildCommand: pip install -r requirements.txt&#13;&#10;    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT&#13;&#10;    plan: free" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
