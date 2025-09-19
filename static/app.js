@@ -191,7 +191,8 @@ function drawCharts(originalSchedule, customSchedule) {
                             fill: false
                         }
                     ] : [])
-                ],
+                ]
+            },
             options: {
                 responsive: true,
                 plugins: {
