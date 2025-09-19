@@ -2,22 +2,70 @@ document.getElementById('loan-form').onsubmit = async function(e) {
     e.preventDefault();
     const form = e.target;
     const data = new FormData(form);
+    lastFormData = new FormData(form); // Save for reuse
     const response = await fetch('/calculate', {
         method: 'POST',
         body: data
     });
     const result = await response.json();
-    displaySummary(result.summary);
-    displaySchedule(result.schedule);
-    drawCharts(result.schedule);
+    lastOriginalResult = result.original;
+    displaySummary(result.original.summary);
+    displaySchedule(result.original.schedule);
+    drawCharts(result.original.schedule, null);
+    // Show custom repayment section
+    document.getElementById('custom-repayment-section').style.display = 'block';
+    document.getElementById('custom-summary').innerHTML = '';
+    document.getElementById('custom-repayment-input').value = '';
 };
 
-function displaySummary(summary) {
+// Handle custom repayment button
+const customBtn = document.getElementById('custom-repayment-btn');
+if (customBtn) {
+    customBtn.onclick = async function() {
+        if (!lastFormData) return;
+        const customValue = parseFloat(document.getElementById('custom-repayment-input').value);
+        if (!customValue || customValue <= 0) {
+            document.getElementById('custom-summary').innerHTML = '<span style="color:red">Enter a valid custom repayment amount.</span>';
+            return;
+        }
+        // Prepare new form data
+        const data = new FormData();
+        for (let [k, v] of lastFormData.entries()) data.append(k, v);
+        data.append('custom_repayment', customValue);
+        const response = await fetch('/calculate', {
+            method: 'POST',
+            body: data
+        });
+        const result = await response.json();
+        if (!result.custom) {
+            document.getElementById('custom-summary').innerHTML = '<span style="color:red">Custom repayment must be greater than the minimum monthly payment.</span>';
+            return;
+        }
+        displaySummary(result.custom.summary, 'Custom Repayment');
+        displaySchedule(result.custom.schedule);
+        displayCustomSummary(result.difference, result.original.summary, result.custom.summary);
+        drawCharts(result.original.schedule, result.custom.schedule);
+    };
+}
+
+function displaySummary(summary, label = 'Summary') {
     document.getElementById('summary').innerHTML = `
-        <h2>Summary</h2>
+        <h2>${label}</h2>
+        <p><strong>Monthly Repayment:</strong> $${summary.monthly_payment.toLocaleString()}</p>
         <p><strong>Total Payments:</strong> $${summary.total_payments.toLocaleString()}</p>
         <p><strong>Total Interest Paid:</strong> $${summary.total_interest.toLocaleString()}</p>
         <p><strong>Payoff Date:</strong> ${summary.payoff_date}</p>
+    `;
+}
+
+function displayCustomSummary(diff, orig, custom) {
+    if (!diff) return;
+    document.getElementById('custom-summary').innerHTML = `
+        <h3>Comparison</h3>
+        <p><strong>Difference in Total Payments:</strong> $${diff.total_payments_diff.toLocaleString()}</p>
+        <p><strong>Months Saved:</strong> ${diff.months_diff}</p>
+        <p><strong>Original Payoff Date:</strong> ${orig.payoff_date}</p>
+        <p><strong>Custom Payoff Date:</strong> ${custom.payoff_date}</p>
     `;
 }
 
@@ -30,9 +78,8 @@ function displaySchedule(schedule) {
     document.getElementById('schedule').innerHTML = html;
 }
 
-function drawCharts(schedule) {
+function drawCharts(originalSchedule, customSchedule) {
     try {
-        // Only use the two remaining canvases
         const breakdownCanvas = document.getElementById('breakdownChart');
         const balanceAndInterestCanvas = document.getElementById('balanceAndInterestChart');
         const ctx2 = breakdownCanvas?.getContext('2d');
@@ -50,34 +97,60 @@ function drawCharts(schedule) {
         if (chart2) chart2.destroy();
         const chart3 = Chart.getChart(balanceAndInterestCanvas);
         if (chart3) chart3.destroy();
-        const labels = schedule.map(row => row.payment_number);
-        const balances = schedule.map(row => row.balance);
-        const principals = schedule.map(row => row.principal);
-        const interests = schedule.map(row => row.interest);
-        // Calculate cumulative interest
+        // Prepare data for original
+        const labels = originalSchedule.map(row => row.payment_number);
+        const balances = originalSchedule.map(row => row.balance);
         let cumulativeInterest = [];
         let total = 0;
-        for (let i = 0; i < interests.length; i++) {
-            total += interests[i];
+        for (let i = 0; i < originalSchedule.length; i++) {
+            total += originalSchedule[i].interest;
             cumulativeInterest.push(Number(total.toFixed(2)));
         }
+        // Prepare data for custom if present
+        let customBalances = [], customCumulativeInterest = [], customLabels = [];
+        if (customSchedule) {
+            customLabels = customSchedule.map(row => row.payment_number);
+            customBalances = customSchedule.map(row => row.balance);
+            let cTotal = 0;
+            for (let i = 0; i < customSchedule.length; i++) {
+                cTotal += customSchedule[i].interest;
+                customCumulativeInterest.push(Number(cTotal.toFixed(2)));
+            }
+        }
+        // Line chart: Principal & Cumulative Interest Over Time
         new Chart(ctx3, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Remaining Principal',
+                        label: 'Original Remaining Principal',
                         data: balances,
                         borderColor: 'blue',
                         fill: false
                     },
                     {
-                        label: 'Cumulative Interest Paid',
+                        label: 'Original Cumulative Interest Paid',
                         data: cumulativeInterest,
                         borderColor: 'orange',
                         fill: false
-                    }
+                    },
+                    ...(customSchedule ? [
+                        {
+                            label: 'Custom Remaining Principal',
+                            data: customBalances,
+                            borderColor: 'green',
+                            borderDash: [5,5],
+                            fill: false
+                        },
+                        {
+                            label: 'Custom Cumulative Interest Paid',
+                            data: customCumulativeInterest,
+                            borderColor: 'red',
+                            borderDash: [5,5],
+                            fill: false
+                        }
+                    ] : [])
                 ]
             },
             options: {
@@ -88,6 +161,9 @@ function drawCharts(schedule) {
                 }
             }
         });
+        // Bar chart: Principal/Interest breakdown (original only)
+        const principals = originalSchedule.map(row => row.principal);
+        const interests = originalSchedule.map(row => row.interest);
         new Chart(ctx2, {
             type: 'bar',
             data: {

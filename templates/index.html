@@ -19,6 +19,11 @@
             <button type="submit">Calculate</button>
         </form>
         <div id="summary"></div>
+        <div id="custom-repayment-section" style="display:none; margin-top:20px;">
+            <label>Custom Monthly Repayment: <input type="number" step="0.01" id="custom-repayment-input"></label>
+            <button id="custom-repayment-btn" type="button">Recalculate with Custom Repayment</button>
+            <div id="custom-summary"></div>
+        </div>
         <canvas id="balanceAndInterestChart" width="400" height="200"></canvas>
         <canvas id="breakdownChart" width="400" height="200"></canvas>
         <div id="schedule"></div>
