@@ -175,6 +175,7 @@ function drawCharts(originalSchedule, customSchedule) {
                         borderColor: 'orange',
                         fill: false
                     },
+                    // Spread custom datasets if present
                     ...(customSchedule ? [
                         {
                             label: 'Custom Remaining Principal',
@@ -191,8 +192,7 @@ function drawCharts(originalSchedule, customSchedule) {
                             fill: false
                         }
                     ] : [])
-                }
-            },
+                ],
             options: {
                 responsive: true,
                 plugins: {
