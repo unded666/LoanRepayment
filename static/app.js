@@ -1,3 +1,7 @@
+let lastFormData = null;
+let lastOriginalResult = null;
+let currencySymbol = '$';
+
 document.getElementById('loan-form').onsubmit = async function(e) {
     e.preventDefault();
     const form = e.target;
@@ -8,10 +12,11 @@ document.getElementById('loan-form').onsubmit = async function(e) {
         body: data
     });
     const result = await response.json();
-    lastOriginalResult = result.original;
-    displaySummary(result.original.summary);
-    displaySchedule(result.original.schedule);
-    drawCharts(result.original.schedule, null);
+    currencySymbol = result.currency_symbol || '$';
+    lastOriginalResult = result.result.original;
+    displaySummary(result.result.original.summary, 'Summary', currencySymbol);
+    displaySchedule(result.result.original.schedule, currencySymbol);
+    drawCharts(result.result.original.schedule, null);
     // Show custom repayment section
     document.getElementById('custom-repayment-section').style.display = 'block';
     document.getElementById('custom-summary').innerHTML = '';
@@ -37,42 +42,43 @@ if (customBtn) {
             body: data
         });
         const result = await response.json();
-        if (!result.custom) {
+        currencySymbol = result.currency_symbol || '$';
+        if (!result.result.custom) {
             document.getElementById('custom-summary').innerHTML = '<span style="color:red">Custom repayment must be greater than the minimum monthly payment.</span>';
             return;
         }
-        displaySummary(result.custom.summary, 'Custom Repayment');
-        displaySchedule(result.custom.schedule);
-        displayCustomSummary(result.difference, result.original.summary, result.custom.summary);
-        drawCharts(result.original.schedule, result.custom.schedule);
+        displaySummary(result.result.custom.summary, 'Custom Repayment', currencySymbol);
+        displaySchedule(result.result.custom.schedule, currencySymbol);
+        displayCustomSummary(result.result.difference, result.result.original.summary, result.result.custom.summary, currencySymbol);
+        drawCharts(result.result.original.schedule, result.result.custom.schedule);
     };
 }
 
-function displaySummary(summary, label = 'Summary') {
+function displaySummary(summary, label = 'Summary', symbol = '$') {
     document.getElementById('summary').innerHTML = `
         <h2>${label}</h2>
-        <p><strong>Monthly Repayment:</strong> $${summary.monthly_payment.toLocaleString()}</p>
-        <p><strong>Total Payments:</strong> $${summary.total_payments.toLocaleString()}</p>
-        <p><strong>Total Interest Paid:</strong> $${summary.total_interest.toLocaleString()}</p>
+        <p><strong>Monthly Repayment:</strong> ${symbol}${summary.monthly_payment.toLocaleString()}</p>
+        <p><strong>Total Payments:</strong> ${symbol}${summary.total_payments.toLocaleString()}</p>
+        <p><strong>Total Interest Paid:</strong> ${symbol}${summary.total_interest.toLocaleString()}</p>
         <p><strong>Payoff Date:</strong> ${summary.payoff_date}</p>
     `;
 }
 
-function displayCustomSummary(diff, orig, custom) {
+function displayCustomSummary(diff, orig, custom, symbol = '$') {
     if (!diff) return;
     document.getElementById('custom-summary').innerHTML = `
         <h3>Comparison</h3>
-        <p><strong>Difference in Total Payments:</strong> $${diff.total_payments_diff.toLocaleString()}</p>
+        <p><strong>Difference in Total Payments:</strong> ${symbol}${diff.total_payments_diff.toLocaleString()}</p>
         <p><strong>Months Saved:</strong> ${diff.months_diff}</p>
         <p><strong>Original Payoff Date:</strong> ${orig.payoff_date}</p>
         <p><strong>Custom Payoff Date:</strong> ${custom.payoff_date}</p>
     `;
 }
 
-function displaySchedule(schedule) {
+function displaySchedule(schedule, symbol = '$') {
     let html = '<h2>Amortization Schedule</h2><table><tr><th>#</th><th>Date</th><th>Payment</th><th>Principal</th><th>Interest</th><th>Balance</th></tr>';
     schedule.forEach(row => {
-        html += `<tr><td>${row.payment_number}</td><td>${row.date}</td><td>$${row.payment.toFixed(2)}</td><td>$${row.principal.toFixed(2)}</td><td>$${row.interest.toFixed(2)}</td><td>$${row.balance.toFixed(2)}</td></tr>`;
+        html += `<tr><td>${row.payment_number}</td><td>${row.date}</td><td>${symbol}${row.payment.toFixed(2)}</td><td>${symbol}${row.principal.toFixed(2)}</td><td>${symbol}${row.interest.toFixed(2)}</td><td>${symbol}${row.balance.toFixed(2)}</td></tr>`;
     });
     html += '</table>';
     document.getElementById('schedule').innerHTML = html;

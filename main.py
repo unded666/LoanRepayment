@@ -8,8 +8,9 @@ from finance import (
     calculate_amortization
 )
 from datetime import date
-
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -54,9 +55,6 @@ async def calculate(
 
 def main():
     import uvicorn
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-    global templates
-    templates = Jinja2Templates(directory="templates")
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
 if __name__ == "__main__":
