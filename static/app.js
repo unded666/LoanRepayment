@@ -7,20 +7,31 @@ document.getElementById('loan-form').onsubmit = async function(e) {
     const form = e.target;
     const data = new FormData(form);
     lastFormData = new FormData(form); // Save for reuse
-    const response = await fetch('/calculate', {
-        method: 'POST',
-        body: data
-    });
-    const result = await response.json();
-    currencySymbol = result.currency_symbol || '$';
-    lastOriginalResult = result.result.original;
-    displaySummary(result.result.original.summary, 'Summary', currencySymbol);
-    displaySchedule(result.result.original.schedule, currencySymbol);
-    drawCharts(result.result.original.schedule, null);
-    // Show custom repayment section
-    document.getElementById('custom-repayment-section').style.display = 'block';
-    document.getElementById('custom-summary').innerHTML = '';
-    document.getElementById('custom-repayment-input').value = '';
+    try {
+        const response = await fetch('/calculate', {
+            method: 'POST',
+            body: data
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Backend error:', response.status, errorText);
+            alert('An error occurred: ' + response.status + '\n' + errorText);
+            return;
+        }
+        const result = await response.json();
+        currencySymbol = result.currency_symbol || '$';
+        lastOriginalResult = result.result.original;
+        displaySummary(result.result.original.summary, 'Summary', currencySymbol);
+        displaySchedule(result.result.original.schedule, currencySymbol);
+        drawCharts(result.result.original.schedule, null);
+        // Show custom repayment section
+        document.getElementById('custom-repayment-section').style.display = 'block';
+        document.getElementById('custom-summary').innerHTML = '';
+        document.getElementById('custom-repayment-input').value = '';
+    } catch (err) {
+        console.error('Network or JS error:', err);
+        alert('A network or application error occurred. See console for details.');
+    }
 };
 
 // Handle custom repayment button
@@ -37,20 +48,31 @@ if (customBtn) {
         const data = new FormData();
         for (let [k, v] of lastFormData.entries()) data.append(k, v);
         data.append('custom_repayment', customValue);
-        const response = await fetch('/calculate', {
-            method: 'POST',
-            body: data
-        });
-        const result = await response.json();
-        currencySymbol = result.currency_symbol || '$';
-        if (!result.result.custom) {
-            document.getElementById('custom-summary').innerHTML = '<span style="color:red">Custom repayment must be greater than the minimum monthly payment.</span>';
-            return;
+        try {
+            const response = await fetch('/calculate', {
+                method: 'POST',
+                body: data
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Backend error:', response.status, errorText);
+                alert('An error occurred: ' + response.status + '\n' + errorText);
+                return;
+            }
+            const result = await response.json();
+            currencySymbol = result.currency_symbol || '$';
+            if (!result.result.custom) {
+                document.getElementById('custom-summary').innerHTML = '<span style="color:red">Custom repayment must be greater than the minimum monthly payment.</span>';
+                return;
+            }
+            displaySummary(result.result.custom.summary, 'Custom Repayment', currencySymbol);
+            displaySchedule(result.result.custom.schedule, currencySymbol);
+            displayCustomSummary(result.result.difference, result.result.original.summary, result.result.custom.summary, currencySymbol);
+            drawCharts(result.result.original.schedule, result.result.custom.schedule);
+        } catch (err) {
+            console.error('Network or JS error:', err);
+            alert('A network or application error occurred. See console for details.');
         }
-        displaySummary(result.result.custom.summary, 'Custom Repayment', currencySymbol);
-        displaySchedule(result.result.custom.schedule, currencySymbol);
-        displayCustomSummary(result.result.difference, result.result.original.summary, result.result.custom.summary, currencySymbol);
-        drawCharts(result.result.original.schedule, result.result.custom.schedule);
     };
 }
 
